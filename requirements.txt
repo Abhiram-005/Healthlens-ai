@@ -1,0 +1,27 @@
+# HealthLens AI - Requirements
+# Install with: pip install -r requirements.txt
+
+# Web Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+
+# LLM - Groq (Free API)
+groq==0.12.0
+
+# OCR & Document Processing
+pytesseract==0.3.13
+pdf2image==1.17.0
+pdfplumber==0.11.4
+Pillow==11.0.0
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+
+# Data & Storage
+pydantic==2.9.2
+aiosqlite==0.20.0
+
+# Utilities
+python-dotenv==1.0.1
+aiofiles==24.1.0
+httpx==0.27.2
