@@ -665,12 +665,26 @@
       if (data.groq_configured) {
         dot.classList.add('ok');
         txt.textContent = 'Groq Connected';
+        // Remove warning banner if previously shown
+        const wb = document.getElementById('apikeyWarning');
+        if (wb) wb.remove();
       } else {
-        txt.textContent = 'Set GROQ_API_KEY in .env';
-        dot.style.background = 'var(--c-warn)';
+        txt.textContent = '⚠️ API Key Not Set';
+        dot.style.background = '#ef4444';
+        // Show big warning banner
+        const banner = document.createElement('div');
+        banner.id = 'apikeyWarning';
+        banner.style.cssText = 'background:#fef2f2;border:2px solid #ef4444;border-radius:10px;padding:16px 20px;margin:16px 0;font-size:14px;line-height:1.6;';
+        banner.innerHTML = '<strong style="color:#dc2626;font-size:15px;">⚠️ GROQ_API_KEY is not configured — AI analysis will not work.</strong><br><br>' +
+          '1. Go to <a href="https://console.groq.com" target="_blank" style="color:#2563eb;">console.groq.com</a> → Sign up free → Create API Key<br>' +
+          '2. Open <code style="background:#fee2e2;padding:2px 5px;border-radius:3px;">C:\\Users\\' + (data.username||'YourName') + '\\Documents\\Healthlens-ai-main\\.env</code> in Notepad<br>' +
+          '3. Replace <code style="background:#fee2e2;padding:2px 5px;border-radius:3px;">your_groq_api_key_here</code> with your actual key<br>' +
+          '4. Save the file and <strong>restart python main.py</strong>';
+        const uploadSection = document.querySelector('.upload-panel') || document.getElementById('results');
+        if (uploadSection) uploadSection.parentNode.insertBefore(banner, uploadSection);
       }
     } catch(e) {
-      document.getElementById('statusText').textContent = 'Server offline';
+      document.getElementById('statusText').textContent = 'Server offline — run: cd backend && python main.py';
     }
     document.getElementById('results').style.display = 'block';
   })();
@@ -841,9 +855,37 @@
       <div class="quality-bar"><div class="quality-fill" style="width:${Math.max(ocrScore,5)}%;background:${qualColor}"></div></div>
     `;
 
-    // Summary banner
+    // Summary banner — rich multi-section display
     const sb = document.getElementById('summaryBanner');
-    sb.innerHTML = `<div class="summary-title">📋 AI Summary</div>${esc(recommendation.plain_summary || extraction.overall_summary || 'Analysis complete.')}`;
+    const summaryText = recommendation.plain_summary || extraction.overall_summary || 'Analysis complete.';
+    const isError = summaryText.startsWith('❌');
+    sb.style.borderColor = isError ? '#ef4444' : '';
+    sb.style.background = isError ? '#fef2f2' : '';
+
+    let summaryHtml = `<div class="summary-title">📋 AI Summary</div>`;
+    summaryHtml += `<p style="font-size:15px;line-height:1.7;margin:0 0 12px 0;">${esc(summaryText).replace(/\n/g,'<br>')}</p>`;
+
+    // Lifestyle notes
+    const lifestyleNotes = recommendation.lifestyle_notes || [];
+    if (lifestyleNotes.length > 0) {
+      summaryHtml += `<div style="margin-top:12px;padding:12px;background:#f0fdf4;border-radius:8px;border-left:3px solid #22c55e;">
+        <strong style="color:#16a34a;">🥗 Lifestyle Suggestions</strong>
+        <ul style="margin:8px 0 0 0;padding-left:18px;">`;
+      lifestyleNotes.forEach(n => { summaryHtml += `<li style="margin:4px 0;font-size:13px;">${esc(n)}</li>`; });
+      summaryHtml += `</ul></div>`;
+    }
+
+    // Next steps
+    const nextSteps = recommendation.next_steps || [];
+    if (nextSteps.length > 0) {
+      summaryHtml += `<div style="margin-top:12px;padding:12px;background:#eff6ff;border-radius:8px;border-left:3px solid #3b82f6;">
+        <strong style="color:#2563eb;">📌 Next Steps</strong>
+        <ol style="margin:8px 0 0 0;padding-left:18px;">`;
+      nextSteps.forEach(s => { summaryHtml += `<li style="margin:4px 0;font-size:13px;">${esc(s)}</li>`; });
+      summaryHtml += `</ol></div>`;
+    }
+
+    sb.innerHTML = summaryHtml;
 
     // Insights grid
     const igEl = document.getElementById('insightsGrid');
@@ -1081,12 +1123,14 @@
   function insightCard(title, value, status, explanation, meaning) {
     const c = status || 'unknown';
     const color = statusColorMap[c] || '#94a3b8';
+    const icons = {normal:'✅', high:'🔴', low:'🔵', abnormal:'⚠️', critical:'🚨', unknown:'⬜'};
+    const icon = icons[c] || '⬜';
     return `<div class="insight-card ${c}">
-      <div class="insight-name">${esc(title)}</div>
+      <div class="insight-name">${icon} ${esc(title)}</div>
       <div class="insight-value" style="color:${color}">${esc(value)}</div>
       <div class="insight-status ${c}">${c.toUpperCase()}</div>
-      ${explanation ? `<div class="insight-explain">${esc(explanation)}</div>` : ''}
-      ${meaning ? `<div class="insight-explain" style="margin-top:4px;font-style:italic">${esc(meaning)}</div>` : ''}
+      ${explanation ? `<div class="insight-explain" style="margin-top:8px;font-size:12px;color:#64748b;line-height:1.5">${esc(explanation)}</div>` : ''}
+      ${meaning ? `<div class="insight-explain" style="margin-top:6px;font-size:12.5px;color:#334155;line-height:1.6;background:#f8fafc;padding:8px;border-radius:6px">${esc(meaning)}</div>` : ''}
     </div>`;
   }
 

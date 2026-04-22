@@ -109,11 +109,13 @@ async def serve_frontend():
 @app.get("/api/health")
 async def health_check():
     groq_key = os.getenv("GROQ_API_KEY", "")
+    configured = bool(groq_key and groq_key != "your_groq_api_key_here")
     return {
         "status": "running",
-        "groq_configured": bool(groq_key and groq_key != "your_groq_api_key_here"),
+        "groq_configured": configured,
+        "groq_warning": None if configured else "GROQ_API_KEY not set! Open .env file and add your key from https://console.groq.com",
         "model_accurate": os.getenv("GROQ_MODEL_ACCURATE", "llama-3.3-70b-versatile"),
-        "model_fast": os.getenv("GROQ_MODEL_FAST", "llama-3.1-8b-instant"),
+        "model_fast": os.getenv("GROQ_MODEL_FAST", "llama-3.3-70b-versatile"),
         "timestamp": datetime.now().isoformat(),
     }
 
